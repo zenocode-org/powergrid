@@ -5,6 +5,7 @@ import json
 from dispatch.types import DispatchProblem, Generator
 from dispatch.verify import parse_schedule, verify, check_feasibility, compute_cost
 from dispatch.generate import solve_dispatch, format_prompt
+from dispatch.evaluate import SYSTEM_PROMPT
 
 
 def test_parse_schedule_json():
@@ -121,3 +122,46 @@ def test_verify_infeasible_fails():
     result = verify(problem, '{"G1": 50}', tolerance=0.05)
     assert not result.success
     assert not result.feasible
+
+
+def test_format_prompt_output():
+    """Final prompt from generated problem has demand, table, and example JSON."""
+    gens = [
+        Generator(name="G1", min_mw=0, max_mw=100, cost_per_mwh=10, ramp_limit_mw=1e9),
+        Generator(name="G2", min_mw=0, max_mw=100, cost_per_mwh=20, ramp_limit_mw=50, prev_output_mw=25),
+    ]
+    prompt = format_prompt(gens, 150.0)
+    assert "Demand: 150 MW" in prompt
+    assert "| Generator | Min MW | Max MW | Cost $/MWh | Prev MW | Max Ramp MW |" in prompt
+    assert "| G1 |" in prompt
+    assert "| G2 |" in prompt
+    assert '{"G1": ..., "G2": ...}' in prompt
+
+
+def test_evaluate_system_prompt():
+    """Evaluate system prompt instructs power grid operator with constraints."""
+    assert "power grid operator" in SYSTEM_PROMPT
+    assert "JSON" in SYSTEM_PROMPT
+    assert "demand" in SYSTEM_PROMPT.lower()
+    assert "Min MW" in SYSTEM_PROMPT or "min" in SYSTEM_PROMPT.lower()
+    assert "Max Ramp" in SYSTEM_PROMPT or "ramp" in SYSTEM_PROMPT.lower()
+
+
+def test_evaluate_user_message_contains_demand():
+    """User message (problem.prompt) contains the demand."""
+    gens = [
+        Generator(name="G1", min_mw=0, max_mw=100, cost_per_mwh=10, ramp_limit_mw=1e9),
+        Generator(name="G2", min_mw=0, max_mw=100, cost_per_mwh=20, ramp_limit_mw=1e9),
+    ]
+    problem = DispatchProblem(
+        problem_id="prompt_test",
+        source_case="test",
+        difficulty="easy",
+        generators=gens,
+        demand_mw=237.0,
+        prompt=format_prompt(gens, 237.0),
+        optimal_schedule={"G1": 100.0, "G2": 137.0},
+        optimal_cost=3740.0,
+    )
+    user_message = problem.prompt
+    assert "Demand: 237 MW" in user_message

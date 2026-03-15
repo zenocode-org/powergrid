@@ -13,12 +13,15 @@ load_dotenv()
 from .types import DispatchProblem, VerificationResult
 from .verify import verify
 
-SYSTEM_PROMPT = """You are a power grid operator. Given a dispatch problem, respond with a JSON object mapping each generator name to its output in MW. Ensure:
-1. Total generation exactly equals demand
-2. Each generator's output is between its Min MW and Max MW
-3. Each generator's change from Prev MW does not exceed Max Ramp MW
+SYSTEM_PROMPT = """You are a power grid operator. Given a dispatch problem, respond with a JSON object mapping each generator name to its output in MW. 
 
-Respond ONLY with the JSON object, no other text."""
+Important constraints:
+- Total generation exactly equals demand
+- Each generator's output is between its Min MW and Max MW
+- Each generator's change from Prev MW does not exceed Max Ramp MW
+
+Respond ONLY with the JSON object, no other text.
+"""
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +72,9 @@ async def run_attempt(
         response = await call_llm_async(client, model, problem.prompt)
 
         logger.debug(
-            f"\n--- [{problem.problem_id}] attempt {attempt + 1} PROMPT ---\n{problem.prompt}\n---"
+            f"\n--- [{problem.problem_id}] attempt {attempt + 1}"
+            f"System Prompt ---\ {SYSTEM_PROMPT}\n" 
+            f"User Prompt ---\n{problem.prompt}\n---"
         )
         logger.debug(
             f"\n--- [{problem.problem_id}] attempt {attempt + 1} OUTPUT ---\n{response}\n---"

@@ -216,9 +216,6 @@ def make_synthetic_problem(
 def format_prompt(generators: list[Generator], demand_mw: float) -> str:
     """Format the dispatch problem as a markdown prompt for the LLM."""
     lines = [
-        "You are a power grid operator. Dispatch the generators below to exactly meet demand",
-        "at minimum total cost. Respond ONLY with a JSON object mapping generator name to MW output.",
-        "",
         f"Demand: {demand_mw:.0f} MW",
         "",
         "| Generator | Min MW | Max MW | Cost $/MWh | Prev MW | Max Ramp MW |",
