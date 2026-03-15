@@ -1,99 +1,167 @@
 # Applied AI Engineer — Take-Home Exercise
+## Power Grid Dispatch Implementation
 
-## 1. Context
+### Quick Start
 
-You work at a frontier-lab focused on advancing the capabilities of current LLMs. A new training run is coming up and the lab asks you to spot a task at which the current model often fails and come up with a method to generate synthetic data to fill that gap.
+```bash
+uv sync
+uv run python -m dispatch.generate --num-problems 8 --output problems.jsonl
+uv run python -m dispatch.evaluate --attempts 2 --model anthropic/claude-sonnet-4.6
+```
 
-This repository provides a starter kit and an example implementation for a simple task to guide you.
+Set `OPENROUTER_API_KEY` for evaluation.
 
-## 2. Example Implementation
+**Findings:** See [FINDINGS.md](FINDINGS.md) for full analysis. Summary: GPT-5.4-pro reaches 100% success; GPT-5-nano is strong for a small model; Claude models are brittle under tight must-run constraints (`min_mw > 0`).
 
-The `examples/countdown/` directory contains a complete example implementation of the Countdown Numbers Game:
+---
 
-- **`types.py`**: Data models using Pydantic
-- **`generate.py`**: Problem generation (generates problems without solutions)
-- **`verify.py`**: Verification utilities to check if expressions solve problems
-- **`tests/`**: Comprehensive tests for all functionality
+### Why This Task?
 
-### Running the Example
+I explored an alternative: [Werewolf](../werewolf/README.md) — social deduction (manipulation + detection) with LLM-vs-LLM transcripts. It was abandoned because (1) template-based dialogue was stilted and prone to generation artifacts; (2) the Kaggle extraction approach added external dataset complexity and scope creep. Economic dispatch was chosen instead: fully programmatic generation (no external data), deterministic verification (LP ground truth), and clear failure modes (`min_mw > 0`, ramp) that calibrate across models from weaker to frontier.
 
-To set up and run the example:
+---
+
+### Iteration Notes / Calibration
+
+**Calibration results:**
+
+- **GPT-4o**: Fails on easy (due to rounding numbers)
+- **Claude 4.6**: Passes easy but fails medium (due to min/max violation)
+
+**Implication:** Introduced granular difficulty using `min_mw` as the primary knob to test the full range of models (from weaker to frontier).
+
+**Medium failure mode:** LLMs correctly apply merit order but set expensive units to 0 ("off"). When generators have `min_mw > 0`, they must run at least at min—output 0 violates constraints. The model assumes "off" = 0 is valid.
+
+**Success rates (5 problems × 1 attempt per difficulty, v1; see [FINDINGS.md](FINDINGS.md) for v1/v2 analysis and [v1_benchmark_runs/scores.yaml](v1_benchmark_runs/scores.yaml) for raw data):**
+
+| Model           | Easy | Medium | Hard | Very hard |
+|-----------------|------|--------|------|-----------|
+| GPT-4o          | 80%  | 20%    | 0%   | 0%        |
+| GPT-5.4-pro     | 100% | 100%   | 100% | 100%      |
+| GPT-5-nano      | 100% | 80%    | 80%  | 80%       |
+| Claude Sonnet 4.5 | 80% | 80%    | 0%   | 40%       |
+| Claude Sonnet 4.6 | 100% | 100%  | 0%   | 80%       |
+| Mistral Large   | 0%   | 40%    | 0%   | 0%        |
+
+**Calibration workflow:** Run `uv run python -m dispatch.benchmark --config benchmark_config.v1.yaml` to reproduce. Results are written to `v1_benchmark_runs/scores.yaml`.
+
+---
+
+### Domain Primer
+
+**What is economic dispatch?** Balance supply and demand at minimum cost. Given generators with capacity limits and costs, assign each generator an output (MW) so that total generation equals demand and total cost is minimized.
+
+**Key terms:**
+
+- **MW (megawatt)**: Unit of power; demand and generator output are in MW
+- **Min MW / Max MW**: Each generator has a feasible output range; output must be within [min, max]
+- **Ramp limit**: Max change in MW from previous timestep; constrains how fast a unit can adjust
+- **Marginal cost ($/MWh)**: Cost per unit of energy; cheaper units are dispatched first (merit order)
+
+**Why it matters:** Real grid operators solve this continuously. Benchmark results vary by model—see [FINDINGS.md](FINDINGS.md).
+
+---
+
+### Difficulty Definition
+
+| Level | Generators | min_mw > 0 | Ramp |
+|-------|------------|------------|------|
+| **Easy** | 3–5 | None (all can be off) | No |
+| **Medium** | 6–10 | 1–3 must run | No |
+| **Hard** | 6–10 | All must run | No |
+| **Very hard** | 10 | All must run | Yes |
+
+- **Easy**: All `min_mw = 0` — any generator can be off. Merit order suffices.
+- **Medium**: 1–3 generators must run; rest can be off. LLM must learn that some units cannot be set to 0.
+- **Hard**: All generators must run. Same count as medium; complexity from min/max.
+- **Very hard**: All must run + ramp constraints.
+
+---
+
+### Task Overview
+
+**Task:** Economic dispatch — given a power grid state (generators with cost curves, capacity limits, ramp constraints, and demand), produce a valid dispatch schedule that minimizes total generation cost.
+
+**Model:** Configurable via OpenRouter SDK (e.g. `openai/gpt-4o`, `anthropic/claude-sonnet-4.6`). Requires `OPENROUTER_API_KEY`.
+
+### Verification
+
+- Parse LLM output (JSON, regex fallback for "Name: value MW").
+- Check feasibility: demand balance, capacity bounds, ramp constraints.
+- Compute cost gap: `(llm_cost - optimal_cost) / optimal_cost`.
+- **Success:** feasible AND gap ≤ 5% (configurable).
+
+### Interpreting Results
+
+- **PASS**: Schedule is feasible AND cost gap ≤ tolerance (default 5%).
+- **FAIL**: Violations (e.g. demand mismatch, min/max violation) or cost gap too high.
+- **Success rate**: Fraction of attempts that pass.
+- **Cost gap**: How much more expensive the LLM schedule is vs optimal.
+
+---
+
+### Project Structure
+
+| Module | Purpose |
+|--------|---------|
+| `dispatch/generate.py` | Generate synthetic problems by difficulty |
+| `dispatch/verify.py` | Verify LLM output against constraints |
+| `dispatch/evaluate.py` | Run LLM on problems via OpenRouter |
+| `dispatch/benchmark.py` | Generate and evaluate with run history |
+| `benchmark_config.example.yaml` | Example YAML config for benchmark |
+| `benchmark_config.v1.yaml` | Config used for shared calibration runs |
+| `v1_benchmark_runs/benchmark_analysis.ipynb` | Jupyter notebook for visualizing benchmark results |
+| `FINDINGS.md` | Full benchmark analysis and key findings |
+| `dispatch/types.py` | Pydantic models |
+
+---
+
+### Installation and Usage
 
 ```bash
 # Install dependencies
 uv sync
 
-# Generate 3 example problems (default)
-uv run python -m examples.countdown.generate
+# Generate problems (default: synthetic, no network)
+uv run python -m dispatch.generate --num-problems 8 --source synthetic --output problems.jsonl
 
-# Generate 10 problems with custom parameters
-uv run python -m examples.countdown.generate --num-samples 10 --num-numbers 4 --max-value 15
+# Generate specific difficulty
+uv run python -m dispatch.generate --num-problems 4 --difficulty easy --output problems.jsonl
 
-# Generate problems and save to file
-uv run python -m examples.countdown.generate --num-samples 100 --output data/countdown_problems.json
+# Add PGLib full-grid problems (requires network)
+uv run python -m dispatch.generate --num-problems 3 --source pglib --output problems.jsonl --append
 
-# Run tests
-uv run pytest examples/countdown/tests/ -v
+# Verify an LLM response manually
+uv run python -m dispatch.verify --problem-id <id> --response '{"G1": 100, "G2": 50}' --problems-file problems.jsonl
+
+# Evaluate model on problems (requires OPENROUTER_API_KEY)
+uv run python -m dispatch.evaluate --attempts 10 --model openai/gpt-4o --tolerance 0.05
+
+# Evaluate single problem
+uv run python -m dispatch.evaluate --problem-id <id> --attempts 5 --model anthropic/claude-sonnet-4.6
+
+# Run attempts in parallel (faster)
+uv run python -m dispatch.evaluate --attempts 10 --async
+
+# Benchmark with generated problems (creates v1_benchmark_runs/ or output_dir from config)
+uv run python -m dispatch.benchmark --attempts 5 --model anthropic/claude-sonnet-4.6 --run-name my-calibration
+
+# Benchmark with YAML config (customize difficulties, models, attempts, etc.)
+uv run python -m dispatch.benchmark --config benchmark_config.v1.yaml
+
+# Scores are written to v1_benchmark_runs/scores.yaml (or path in config)
 ```
 
-## 3. The Exercise
+Set `OPENROUTER_API_KEY` for evaluation.
 
-#### Model choice (`y`)
-Choose any frontier model. We will supply an Openrouter key with $75 credits for you to use while completing this task.
+### Benchmark Config (YAML)
 
-#### Task Selection (`x`)
-Identify a task (`x`) that your chosen model (`y`) currently solves correctly only about **10–90%** of the time.
+Use `--config benchmark_config.v1.yaml` for the shared calibration run, or `benchmark_config.example.yaml` for a template. See the config files for all options:
 
-Examples: sentiment shift detection, specialized code transformation, SVG animation, performing tasks on a given software via computer-use, etc.
+- **difficulties**: List of levels (easy, medium, hard, very_hard)
+- **problems_per_difficulty**: Problems to generate per level
+- **attempts**: LLM attempts per problem
+- **models**: List of OpenRouter models to evaluate (runs benchmark for each)
+- **tolerance**, **use_async**, **output_dir**, **seed**, **scores_file**
 
-**Important:** The task cannot be something too trivial (100% success rate) nor something currently impossible for the model (0% success rate).
-
-#### Synthetic Data Generation
-Design a scalable method to generate synthetic data we could train on to improve model (`y`) at task (`x`).
-
-Generate at least **5 concrete example problems** in your submission that illustrate how the generated data is structured and how we could use it for training.
-
-*Definition:* A "problem" is defined as the combination of:
-1.  **input** we feed to an LLM (e.g., a task prompt or a task prompt + a state)
-2.  **Golden label** (expected output) or a way to verify the LLM completed the task.
-
-**Note:** You'll need to design appropriate prompts for your chosen task, including system prompts, user prompts, and any necessary formatting instructions for the model.
-
-#### Verification
-Implement a verification system that can determine whether an LLM's response correctly solves a given problem. This may involve parsing the response, extracting relevant information, and comparing it against the expected output or applying domain-specific validation rules.
-
-#### Evaluation
-Implement a script that allows us to run model (`y`) on a given problem for a specified number of times and compute the success rate.
-
-**Important:** When attempting to solve the synthetic problems the LLM cannot access the internet.
-
-## 4. Additional Notes
-- To be clear, you are not required to do any training for this exercise, only the data generation for the training.
-- Be prepared to walk us through your approach, design choices, implementation etc.
-- Although the 10-90% range is the goal, we will accept submissions that are not in that range as long as they are not 0% or 100%.
-- The focus is on your AI/ML design thinking as well as coding.
-
-## 5. Deliverables
-
-Please submit the following in a single repository or ZIP:
-
-1.  **`README.md`** with:
-    * An overview of your chosen task `x` and why it meets the performance criteria, model used, etc.
-    * A description of your synthetic data generation strategy.
-    * Instructions on how to install dependencies and run your scripts.
-2.  **`generate.py`** (or equivalent):
-    * A script to generate your synthetic data.
-    * It should output the data in a structured format like JSON or CSV, or Parquet.
-3.  **`verify.py`** (or equivalent):
-    * A script or function that can verify whether an LLM's response correctly solves a given problem.
-    * Should handle parsing LLM outputs and applying domain-specific validation logic.
-4.  **`evaluate.py`** (or equivalent):
-    * A script that lets us run one of your example problems through the model and verifies the output, with multiple attempts.
-    * Should include prompt construction and response parsing logic.
-5.  **`problems.{jsonl|parquet|csv}`**
-    * A set of 4 or more example generated problems that fall within the 10-90% success rate bucket.
-
-## 6. Timeline & Submission
-
-* **Time Budget:** Please aim for 2-4 hours of your time.
-* **Submission:** Please email a link to your repository or a ZIP file to the hiring team.
+CLI arguments override config values.
