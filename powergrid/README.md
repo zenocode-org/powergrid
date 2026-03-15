@@ -11,6 +11,8 @@ uv run python -m dispatch.evaluate --attempts 2 --model anthropic/claude-sonnet-
 
 Set `OPENROUTER_API_KEY` for evaluation.
 
+**Findings:** See [FINDINGS.md](FINDINGS.md) for full analysis. Summary: GPT-5.4-pro reaches 100% success; GPT-5-nano is strong for a small model; Claude models are brittle under tight must-run constraints (`min_mw > 0`).
+
 ---
 
 ### Why This Task?
@@ -30,7 +32,7 @@ I explored an alternative: [Werewolf](../werewolf/README.md) — social deductio
 
 **Medium failure mode:** LLMs correctly apply merit order but set expensive units to 0 ("off"). When generators have `min_mw > 0`, they must run at least at min—output 0 violates constraints. The model assumes "off" = 0 is valid.
 
-**Success rates (5 problems × 1 attempt per difficulty, see [v1_benchmark_runs/scores.yaml](v1_benchmark_runs/scores.yaml) and [benchmark_analysis.ipynb](v1_benchmark_runs/benchmark_analysis.ipynb) for analysis):**
+**Success rates (5 problems × 1 attempt per difficulty, v1; see [FINDINGS.md](FINDINGS.md) for v1/v2 analysis and [v1_benchmark_runs/scores.yaml](v1_benchmark_runs/scores.yaml) for raw data):**
 
 | Model           | Easy | Medium | Hard | Very hard |
 |-----------------|------|--------|------|-----------|
@@ -56,7 +58,7 @@ I explored an alternative: [Werewolf](../werewolf/README.md) — social deductio
 - **Ramp limit**: Max change in MW from previous timestep; constrains how fast a unit can adjust
 - **Marginal cost ($/MWh)**: Cost per unit of energy; cheaper units are dispatched first (merit order)
 
-**Why it matters:** Real grid operators solve this continuously. LLMs struggle when `min_mw > 0` (must-run) or ramp constraints apply—simple "greedy by cost" fails.
+**Why it matters:** Real grid operators solve this continuously. Benchmark results vary by model—see [FINDINGS.md](FINDINGS.md).
 
 ---
 
@@ -109,6 +111,7 @@ I explored an alternative: [Werewolf](../werewolf/README.md) — social deductio
 | `benchmark_config.example.yaml` | Example YAML config for benchmark |
 | `benchmark_config.v1.yaml` | Config used for shared calibration runs |
 | `v1_benchmark_runs/benchmark_analysis.ipynb` | Jupyter notebook for visualizing benchmark results |
+| `FINDINGS.md` | Full benchmark analysis and key findings |
 | `dispatch/types.py` | Pydantic models |
 
 ---
