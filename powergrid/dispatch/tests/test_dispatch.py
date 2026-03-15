@@ -2,6 +2,8 @@
 
 import json
 import random
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -170,6 +172,51 @@ def test_evaluate_user_message_contains_demand():
     )
     user_message = problem.prompt
     assert "Demand: 237 MW" in user_message
+
+
+def test_generate_cli_produces_valid_jsonl():
+    """Generate CLI writes valid JSONL with expected structure."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "problems.jsonl"
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "dispatch.generate",
+                "--num-problems",
+                "4",
+                "--output",
+                str(out),
+                "--seed",
+                "99",
+            ],
+            check=True,
+            capture_output=True,
+            cwd=Path(__file__).resolve().parents[2],
+        )
+        problems = [json.loads(line) for line in out.read_text().strip().split("\n")]
+        assert len(problems) == 4
+        for p in problems:
+            assert "problem_id" in p and "generators" in p and "demand_mw" in p
+            DispatchProblem.model_validate(p)
+
+
+def test_problems_jsonl_roundtrip():
+    """Save and load DispatchProblem preserves data."""
+    problems = [make_synthetic_problem("easy", problem_idx=i) for i in range(3)]
+    problems = [p for p in problems if p is not None][:2]
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
+        path = Path(f.name)
+        for p in problems:
+            f.write(p.model_dump_json() + "\n")
+    try:
+        loaded = load_problems(str(path), problem_id=None)
+        assert len(loaded) == len(problems)
+        for orig, ld in zip(problems, loaded):
+            assert ld.problem_id == orig.problem_id
+            assert ld.demand_mw == orig.demand_mw
+    finally:
+        path.unlink(missing_ok=True)
 
 
 def test_load_problems_filters_by_problem_id():

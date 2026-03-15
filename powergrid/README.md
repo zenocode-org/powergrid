@@ -13,6 +13,12 @@ Set `OPENROUTER_API_KEY` for evaluation.
 
 ---
 
+### Why This Task?
+
+I explored an alternative: [Werewolf](../werewolf/README.md) — social deduction (manipulation + detection) with LLM-vs-LLM transcripts. It was abandoned because (1) template-based dialogue was stilted and prone to generation artifacts; (2) the Kaggle extraction approach added external dataset complexity and scope creep. Economic dispatch was chosen instead: fully programmatic generation (no external data), deterministic verification (LP ground truth), and clear failure modes (`min_mw > 0`, ramp) that calibrate across models from weaker to frontier.
+
+---
+
 ### Iteration Notes / Calibration
 
 **Calibration results:**
@@ -23,6 +29,19 @@ Set `OPENROUTER_API_KEY` for evaluation.
 **Implication:** Introduced granular difficulty using `min_mw` as the primary knob to test the full range of models (from weaker to frontier).
 
 **Medium failure mode:** LLMs correctly apply merit order but set expensive units to 0 ("off"). When generators have `min_mw > 0`, they must run at least at min—output 0 violates constraints. The model assumes "off" = 0 is valid.
+
+**Success rates (5 problems × 1 attempt per difficulty, see [v1_benchmark_runs/scores.yaml](v1_benchmark_runs/scores.yaml) and [benchmark_analysis.ipynb](v1_benchmark_runs/benchmark_analysis.ipynb) for analysis):**
+
+| Model           | Easy | Medium | Hard | Very hard |
+|-----------------|------|--------|------|-----------|
+| GPT-4o          | 80%  | 20%    | 0%   | 0%        |
+| GPT-5.4-pro     | 100% | 100%   | 100% | 100%      |
+| GPT-5-nano      | 100% | 80%    | 80%  | 80%       |
+| Claude Sonnet 4.5 | 80% | 80%    | 0%   | 40%       |
+| Claude Sonnet 4.6 | 100% | 100%  | 0%   | 80%       |
+| Mistral Large   | 0%   | 40%    | 0%   | 0%        |
+
+**Calibration workflow:** Run `uv run python -m dispatch.benchmark --config benchmark_config.v1.yaml` to reproduce. Results are written to `v1_benchmark_runs/scores.yaml`.
 
 ---
 
@@ -88,6 +107,8 @@ Set `OPENROUTER_API_KEY` for evaluation.
 | `dispatch/evaluate.py` | Run LLM on problems via OpenRouter |
 | `dispatch/benchmark.py` | Generate and evaluate with run history |
 | `benchmark_config.example.yaml` | Example YAML config for benchmark |
+| `benchmark_config.v1.yaml` | Config used for shared calibration runs |
+| `v1_benchmark_runs/benchmark_analysis.ipynb` | Jupyter notebook for visualizing benchmark results |
 | `dispatch/types.py` | Pydantic models |
 
 ---
@@ -119,20 +140,20 @@ uv run python -m dispatch.evaluate --problem-id <id> --attempts 5 --model anthro
 # Run attempts in parallel (faster)
 uv run python -m dispatch.evaluate --attempts 10 --async
 
-# Benchmark with generated problems (creates benchmark_runs/<timestamp>_<run_name>_problems.jsonl)
+# Benchmark with generated problems (creates v1_benchmark_runs/ or output_dir from config)
 uv run python -m dispatch.benchmark --attempts 5 --model anthropic/claude-sonnet-4.6 --run-name my-calibration
 
 # Benchmark with YAML config (customize difficulties, models, attempts, etc.)
-uv run python -m dispatch.benchmark --config benchmark_config.yaml
+uv run python -m dispatch.benchmark --config benchmark_config.v1.yaml
 
-# Scores are written to benchmark_runs/scores.yaml by default (or path in config)
+# Scores are written to v1_benchmark_runs/scores.yaml (or path in config)
 ```
 
 Set `OPENROUTER_API_KEY` for evaluation.
 
 ### Benchmark Config (YAML)
 
-Use `--config benchmark_config.yaml` to customize the benchmark. See `benchmark_config.example.yaml` for all options:
+Use `--config benchmark_config.v1.yaml` for the shared calibration run, or `benchmark_config.example.yaml` for a template. See the config files for all options:
 
 - **difficulties**: List of levels (easy, medium, hard, very_hard)
 - **problems_per_difficulty**: Problems to generate per level
