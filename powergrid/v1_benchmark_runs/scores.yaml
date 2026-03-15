@@ -1,0 +1,175 @@
+runs:
+- model: openai/gpt-4o
+  run_name: openai_gpt-4o
+  timestamp: 2026-03-15_19-29-51
+  attempts_per_problem: 1
+  by_difficulty:
+    easy:
+      passed: 4
+      total: 5
+      success_rate: 0.8
+      avg_cost_gap_pct: -2.25
+    medium:
+      passed: 1
+      total: 5
+      success_rate: 0.2
+      avg_cost_gap_pct: 9.75
+    hard:
+      passed: 0
+      total: 5
+      success_rate: 0.0
+      avg_cost_gap_pct: -1.0
+    very_hard:
+      passed: 0
+      total: 5
+      success_rate: 0.0
+      avg_cost_gap_pct: 24.38
+  overall:
+    passed: 5
+    total: 20
+    success_rate: 0.25
+- model: openai/gpt-5.4-pro
+  run_name: openai_gpt-5.4-pro
+  timestamp: 2026-03-15_19-29-51
+  attempts_per_problem: 1
+  by_difficulty:
+    easy:
+      passed: 5
+      total: 5
+      success_rate: 1.0
+      avg_cost_gap_pct: 0.0
+    medium:
+      passed: 5
+      total: 5
+      success_rate: 1.0
+      avg_cost_gap_pct: 0.0
+    hard:
+      passed: 5
+      total: 5
+      success_rate: 1.0
+      avg_cost_gap_pct: 0.0
+    very_hard:
+      passed: 5
+      total: 5
+      success_rate: 1.0
+      avg_cost_gap_pct: -0.0
+  overall:
+    passed: 20
+    total: 20
+    success_rate: 1.0
+- model: openai/gpt-5-nano
+  run_name: openai_gpt-5-nano
+  timestamp: 2026-03-15_19-29-51
+  attempts_per_problem: 1
+  by_difficulty:
+    easy:
+      passed: 5
+      total: 5
+      success_rate: 1.0
+      avg_cost_gap_pct: 0.0
+    medium:
+      passed: 4
+      total: 5
+      success_rate: 0.8
+      avg_cost_gap_pct: 3.08
+    hard:
+      passed: 4
+      total: 5
+      success_rate: 0.8
+      avg_cost_gap_pct: 5.18
+    very_hard:
+      passed: 4
+      total: 5
+      success_rate: 0.8
+      avg_cost_gap_pct: 6.72
+  overall:
+    passed: 17
+    total: 20
+    success_rate: 0.85
+- model: anthropic/claude-sonnet-4.5
+  run_name: anthropic_claude-sonnet-4.5
+  timestamp: 2026-03-15_19-29-51
+  attempts_per_problem: 1
+  by_difficulty:
+    easy:
+      passed: 4
+      total: 5
+      success_rate: 0.8
+      avg_cost_gap_pct: -3.91
+    medium:
+      passed: 4
+      total: 5
+      success_rate: 0.8
+      avg_cost_gap_pct: -8.89
+    hard:
+      passed: 0
+      total: 5
+      success_rate: 0.0
+      avg_cost_gap_pct: -6.22
+    very_hard:
+      passed: 2
+      total: 5
+      success_rate: 0.4
+      avg_cost_gap_pct: 7.9
+  overall:
+    passed: 10
+    total: 20
+    success_rate: 0.5
+- model: anthropic/claude-sonnet-4.6
+  run_name: anthropic_claude-sonnet-4.6
+  timestamp: 2026-03-15_19-29-51
+  attempts_per_problem: 1
+  by_difficulty:
+    easy:
+      passed: 5
+      total: 5
+      success_rate: 1.0
+      avg_cost_gap_pct: 0.19
+    medium:
+      passed: 5
+      total: 5
+      success_rate: 1.0
+      avg_cost_gap_pct: 0.0
+    hard:
+      passed: 0
+      total: 5
+      success_rate: 0.0
+      avg_cost_gap_pct: -7.31
+    very_hard:
+      passed: 4
+      total: 5
+      success_rate: 0.8
+      avg_cost_gap_pct: 2.9
+  overall:
+    passed: 14
+    total: 20
+    success_rate: 0.7
+- model: mistralai/mistral-large-2512
+  run_name: mistralai_mistral-large-2512
+  timestamp: 2026-03-15_19-29-51
+  attempts_per_problem: 1
+  by_difficulty:
+    easy:
+      passed: 0
+      total: 5
+      success_rate: 0.0
+      avg_cost_gap_pct: -14.24
+    medium:
+      passed: 2
+      total: 5
+      success_rate: 0.4
+      avg_cost_gap_pct: 6.51
+    hard:
+      passed: 0
+      total: 5
+      success_rate: 0.0
+      avg_cost_gap_pct: 9.3
+    very_hard:
+      passed: 0
+      total: 5
+      success_rate: 0.0
+      avg_cost_gap_pct: 24.49
+  overall:
+    passed: 2
+    total: 20
+    success_rate: 0.1

@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-03-15_19-29-51",
+  "run_name": "anthropic_claude-sonnet-4.5",
+  "model": "anthropic/claude-sonnet-4.5",
+  "attempts_per_problem": 1,
+  "by_difficulty": {
+    "easy": {
+      "passed": 4,
+      "total": 5,
+      "success_rate": 0.8,
+      "avg_cost_gap": -0.03907362134471843
+    },
+    "medium": {
+      "passed": 4,
+      "total": 5,
+      "success_rate": 0.8,
+      "avg_cost_gap": -0.08888535270260092
+    },
+    "hard": {
+      "passed": 0,
+      "total": 5,
+      "success_rate": 0.0,
+      "avg_cost_gap": -0.06220730942447698
+    },
+    "very_hard": {
+      "passed": 2,
+      "total": 5,
+      "success_rate": 0.4,
+      "avg_cost_gap": 0.07897839391323368
+    }
+  }
+}

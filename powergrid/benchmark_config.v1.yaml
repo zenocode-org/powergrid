@@ -1,0 +1,42 @@
+# Benchmark configuration
+# Pass with: uv run python -m dispatch.benchmark --config benchmark_config.yaml
+
+# Difficulties to include (order preserved)
+difficulties:
+  - easy
+  - medium
+  - hard
+  - very_hard
+
+# Problems to generate per difficulty level
+problems_per_difficulty: 5
+
+# Attempts per problem (LLM calls per problem)
+attempts: 1
+
+# Model(s) to evaluate - runs benchmark for each
+models:
+  - openai/gpt-4o
+  - openai/gpt-5.4-pro
+  - openai/gpt-5-nano
+  - anthropic/claude-sonnet-4.5
+  - anthropic/claude-sonnet-4.6
+  - mistralai/mistral-large-2512
+
+# Cost gap tolerance for success (0.05 = 5%)
+tolerance: 0.05
+
+# Run attempts in parallel (faster, more API load)
+use_async: true
+
+# Output directory for problems, results, and scores
+output_dir: v1_benchmark_runs
+
+# Run name override (default: derived from model)
+# run_name: my-calibration
+
+# Random seed for problem generation
+seed: 1
+
+# Scores output file (YAML summary). Set to null to skip.
+scores_file: v1_benchmark_runs/scores.yaml

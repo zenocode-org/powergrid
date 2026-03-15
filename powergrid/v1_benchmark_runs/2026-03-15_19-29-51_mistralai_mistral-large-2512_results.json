@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-03-15_19-29-51",
+  "run_name": "mistralai_mistral-large-2512",
+  "model": "mistralai/mistral-large-2512",
+  "attempts_per_problem": 1,
+  "by_difficulty": {
+    "easy": {
+      "passed": 0,
+      "total": 5,
+      "success_rate": 0.0,
+      "avg_cost_gap": -0.14242458360539992
+    },
+    "medium": {
+      "passed": 2,
+      "total": 5,
+      "success_rate": 0.4,
+      "avg_cost_gap": 0.06513113085914161
+    },
+    "hard": {
+      "passed": 0,
+      "total": 5,
+      "success_rate": 0.0,
+      "avg_cost_gap": 0.0930407296311477
+    },
+    "very_hard": {
+      "passed": 0,
+      "total": 5,
+      "success_rate": 0.0,
+      "avg_cost_gap": 0.2449176727915407
+    }
+  }
+}

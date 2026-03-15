@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-03-15_19-29-51",
+  "run_name": "openai_gpt-5-nano",
+  "model": "openai/gpt-5-nano",
+  "attempts_per_problem": 1,
+  "by_difficulty": {
+    "easy": {
+      "passed": 5,
+      "total": 5,
+      "success_rate": 1.0,
+      "avg_cost_gap": 5.0438529245261735e-17
+    },
+    "medium": {
+      "passed": 4,
+      "total": 5,
+      "success_rate": 0.8,
+      "avg_cost_gap": 0.030777646115263985
+    },
+    "hard": {
+      "passed": 4,
+      "total": 5,
+      "success_rate": 0.8,
+      "avg_cost_gap": 0.05179694346094658
+    },
+    "very_hard": {
+      "passed": 4,
+      "total": 5,
+      "success_rate": 0.8,
+      "avg_cost_gap": 0.06718218753474874
+    }
+  }
+}

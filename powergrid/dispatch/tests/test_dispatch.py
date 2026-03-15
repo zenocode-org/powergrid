@@ -1,11 +1,16 @@
 """Tests for dispatch module."""
 
 import json
+import random
+import tempfile
+from pathlib import Path
+
+import numpy as np
 
 from dispatch.types import DispatchProblem, Generator
 from dispatch.verify import parse_schedule, verify, check_feasibility, compute_cost
-from dispatch.generate import solve_dispatch, format_prompt
-from dispatch.evaluate import SYSTEM_PROMPT
+from dispatch.generate import solve_dispatch, format_prompt, make_synthetic_problem
+from dispatch.evaluate import SYSTEM_PROMPT, load_problems
 
 
 def test_parse_schedule_json():
@@ -165,3 +170,89 @@ def test_evaluate_user_message_contains_demand():
     )
     user_message = problem.prompt
     assert "Demand: 237 MW" in user_message
+
+
+def test_load_problems_filters_by_problem_id():
+    """load_problems filters to single problem when problem_id is given."""
+    problems = [
+        DispatchProblem(
+            problem_id="p1",
+            source_case="test",
+            difficulty="easy",
+            generators=[],
+            demand_mw=100,
+            prompt="",
+            optimal_schedule={},
+            optimal_cost=0,
+        ),
+        DispatchProblem(
+            problem_id="p2",
+            source_case="test",
+            difficulty="easy",
+            generators=[],
+            demand_mw=200,
+            prompt="",
+            optimal_schedule={},
+            optimal_cost=0,
+        ),
+    ]
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
+        for p in problems:
+            f.write(p.model_dump_json() + "\n")
+        path = f.name
+    try:
+        loaded = load_problems(path, problem_id="p2")
+        assert len(loaded) == 1
+        assert loaded[0].problem_id == "p2"
+        assert loaded[0].demand_mw == 200
+        loaded_all = load_problems(path, problem_id=None)
+        assert len(loaded_all) == 2
+    finally:
+        Path(path).unlink(missing_ok=True)
+
+
+def test_difficulty_easy_all_min_zero():
+    """Easy problems have all generators with min_mw=0."""
+    random.seed(42)
+    np.random.seed(42)
+    for _ in range(5):
+        p = make_synthetic_problem("easy", problem_idx=hash(str(_)) % 100000)
+        assert p is not None
+        for g in p.generators:
+            assert g.min_mw == 0, f"Easy problem has generator with min_mw={g.min_mw}"
+
+
+def test_difficulty_medium_one_to_three_must_run():
+    """Medium problems have 1-3 generators with min_mw>0."""
+    random.seed(43)
+    np.random.seed(43)
+    for _ in range(10):
+        p = make_synthetic_problem("medium", problem_idx=hash(str(_)) % 100000)
+        if p is None:
+            continue
+        n_must_run = sum(1 for g in p.generators if g.min_mw > 0)
+        assert 1 <= n_must_run <= 3, f"Medium has {n_must_run} must-run, expected 1-3"
+
+
+def test_difficulty_hard_all_must_run():
+    """Hard problems have all generators with min_mw>0."""
+    random.seed(44)
+    np.random.seed(44)
+    for _ in range(5):
+        p = make_synthetic_problem("hard", problem_idx=hash(str(_)) % 100000)
+        assert p is not None
+        for g in p.generators:
+            assert g.min_mw > 0, f"Hard problem has generator with min_mw=0"
+
+
+def test_difficulty_very_hard_all_must_run_and_has_ramp():
+    """Very hard problems have all min_mw>0 and ramp constraints."""
+    random.seed(45)
+    np.random.seed(45)
+    for _ in range(5):
+        p = make_synthetic_problem("very_hard", problem_idx=hash(str(_)) % 100000)
+        assert p is not None
+        for g in p.generators:
+            assert g.min_mw > 0
+        n_with_ramp = sum(1 for g in p.generators if g.ramp_limit_mw < 1e8)
+        assert n_with_ramp > 0, "Very hard should have ramp constraints"

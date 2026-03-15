@@ -126,34 +126,72 @@ SYNTHETIC_TYPES = {
     "GAS_PEAKER": (10, 30, 50, 150, 60, 120, 0.6),
 }
 
+# Difficulty config: (n_gens_range, n_must_run, use_ramp)
+# n_must_run: None = all min=0, int = that many have min>0, "all" = all have min>0
+DIFFICULTY_CONFIG = {
+    "easy": ((3, 5), None, False),
+    "medium": ((6, 10), (1, 3), False),
+    "hard": ((6, 10), "all", False),
+    "very_hard": ((10, 10), "all", True),
+}
+
 
 def make_synthetic_problem(
     difficulty: str,
-    n_gens: int,
-    use_ramp: bool,
-    problem_idx: int,
+    n_gens: int | None = None,
+    use_ramp: bool | None = None,
+    problem_idx: int = 0,
 ) -> DispatchProblem | None:
-    """Generate a dispatch problem from synthetic generator parameters."""
+    """Generate a dispatch problem from synthetic generator parameters.
+
+    Difficulty levels (min_mw as primary knob):
+    - easy: 3-5 gens, all min_mw=0 (any can be off)
+    - medium: 6-10 gens, 1-3 must run (min_mw>0), rest can be off
+    - hard: 6-10 gens, all must run
+    - very_hard: 10 gens, all must run + ramp constraints
+    """
+    config = DIFFICULTY_CONFIG.get(difficulty)
+    if not config:
+        return None
+    (n_lo, n_hi), n_must_run, default_ramp = config
+    if n_gens is None:
+        n_gens = random.randint(n_lo, n_hi)
+    if use_ramp is None:
+        use_ramp = default_ramp
+
     types = list(SYNTHETIC_TYPES.keys())
     generators: list[Generator] = []
 
-    # Cost spread: easy = wide, medium = narrower, hard = tight
-    cost_narrow = {"easy": 0.0, "medium": 0.3, "hard": 0.6}
+    # Determine which generators get min_mw > 0
+    if n_must_run is None:
+        must_run_indices: set[int] = set()
+    elif n_must_run == "all":
+        must_run_indices = set(range(n_gens))
+    else:
+        lo, hi = n_must_run
+        n_must = random.randint(lo, hi)
+        must_run_indices = set(random.sample(range(n_gens), min(n_must, n_gens)))
+
+    # Cost spread: easy = wide, medium = narrower, hard/very_hard = tight
+    cost_narrow = {"easy": 0.0, "medium": 0.3, "hard": 0.6, "very_hard": 0.6}
     narrow = cost_narrow.get(difficulty, 0.3)
 
     for i in range(n_gens):
         t = random.choice(types)
         pmin_lo, pmin_hi, pmax_lo, pmax_hi, cost_lo, cost_hi, ramp_frac = SYNTHETIC_TYPES[t]
-        pmin = random.uniform(pmin_lo, pmin_hi)
-        pmax = random.uniform(max(pmax_lo, pmin + 10), pmax_hi)
-        if pmax <= pmin:
-            pmax = pmin + random.uniform(20, 100)
 
-        # Round to integers to mimic PGLib real-world data (avoids prompt/verification mismatch)
-        pmin = max(1, int(round(pmin)))
-        pmax = max(pmin + 1, int(round(pmax)))
+        if i in must_run_indices:
+            pmin = random.uniform(pmin_lo, pmin_hi)
+            pmax = random.uniform(max(pmax_lo, pmin + 10), pmax_hi)
+            if pmax <= pmin:
+                pmax = pmin + random.uniform(20, 100)
+            pmin = max(1, int(round(pmin)))
+            pmax = max(pmin + 1, int(round(pmax)))
+        else:
+            pmin = 0
+            pmax = random.uniform(pmax_lo, pmax_hi)
+            pmax = max(10, int(round(pmax)))
 
-        # Narrow cost spread for harder difficulties
         cost_mid = (cost_lo + cost_hi) / 2
         cost_half = (cost_hi - cost_lo) / 2 * (1 - narrow)
         cost = random.uniform(cost_mid - cost_half, cost_mid + cost_half)
@@ -161,7 +199,7 @@ def make_synthetic_problem(
 
         ramp = 1e9
         prev = 0.0
-        if use_ramp and ramp_frac < 1.0:
+        if use_ramp and ramp_frac < 1.0 and pmin > 0:
             ramp = (pmax - pmin) * ramp_frac
             ramp = max(10, int(round(ramp)))
             prev = int(round((pmin + pmax) / 2.0))
@@ -188,7 +226,12 @@ def make_synthetic_problem(
     if usable < 1.0:
         return None
 
-    frac_ranges = {"easy": (0.85, 1.0), "medium": (0.55, 0.80), "hard": (0.35, 0.60)}
+    frac_ranges = {
+        "easy": (0.85, 1.0),
+        "medium": (0.55, 0.80),
+        "hard": (0.35, 0.60),
+        "very_hard": (0.35, 0.60),
+    }
     lo, hi = frac_ranges.get(difficulty, (0.55, 0.85))
     frac = random.uniform(lo, hi)
     demand = float(int(round(eff_min + frac * usable)))
@@ -396,6 +439,13 @@ def main():
         default=42,
         help="Random seed",
     )
+    parser.add_argument(
+        "--difficulty",
+        type=str,
+        choices=["easy", "medium", "hard", "very_hard"],
+        default=None,
+        help="Generate only this difficulty (default: mix of all)",
+    )
     args = parser.parse_args()
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -404,20 +454,13 @@ def main():
     seen_ids: set[str] = set()
 
     if args.source == "synthetic":
-        configs = [
-            ("easy", 3, False),
-            ("easy", 5, False),
-            ("medium", 6, False),
-            ("medium", 10, False),
-            ("hard", 10, True),
-            ("hard", 15, True),
-        ]
+        configs = [args.difficulty] if args.difficulty else ["easy", "medium", "hard", "very_hard"]
         attempts = 0
         max_attempts = 500
         while len(problems) < args.num_problems and attempts < max_attempts:
             attempts += 1
-            diff, n_gens, use_ramp = random.choice(configs)
-            p = make_synthetic_problem(diff, n_gens, use_ramp, attempts)
+            diff = random.choice(configs)
+            p = make_synthetic_problem(diff, problem_idx=attempts)
             if p and p.problem_id not in seen_ids:
                 problems.append(p)
                 seen_ids.add(p.problem_id)
