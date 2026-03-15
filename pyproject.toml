@@ -1,0 +1,17 @@
+[project]
+name = "ai-engineer-take-home"
+version = "0.1.0"
+description = "Starter kit for the AI Engineer take-home exercise."
+requires-python = ">=3.9"
+dependencies = [
+    "argparse>=1.4.0",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest"
+]
