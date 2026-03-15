@@ -45,6 +45,8 @@ I explored an alternative: [Werewolf](../werewolf/README.md) — social deductio
 
 **Calibration workflow:** Run `uv run python -m dispatch.benchmark --config benchmark_config.v1.yaml` to reproduce. Results are written to `v1_benchmark_runs/scores.yaml`.
 
+**PGLib:** Tried full-grid problems from PGLib-UC (RTS-GMLC, FERC cases). It was too much—realistic grids have many more generators and network constraints, making the benchmark harder to interpret and slower to run. Kept synthetic problems as the primary calibration; PGLib is available for a dedicated run (e.g. GPT-5.4-pro at 100% on synthetic) via `benchmark_config.pglib_gpt54.yaml`.
+
 ---
 
 ### Domain Primer
@@ -149,6 +151,9 @@ uv run python -m dispatch.benchmark --attempts 5 --model anthropic/claude-sonnet
 # Benchmark with YAML config (customize difficulties, models, attempts, etc.)
 uv run python -m dispatch.benchmark --config benchmark_config.v1.yaml
 
+# PGLib benchmark (GPT-5.4-pro only; requires network to fetch PGLib cases)
+uv run python -m dispatch.benchmark --config benchmark_config.pglib_gpt54.yaml
+
 # Scores are written to v1_benchmark_runs/scores.yaml (or path in config)
 ```
 
@@ -158,8 +163,10 @@ Set `OPENROUTER_API_KEY` for evaluation.
 
 Use `--config benchmark_config.v1.yaml` for the shared calibration run, or `benchmark_config.example.yaml` for a template. See the config files for all options:
 
+- **source**: `synthetic` (default) or `pglib` (full-grid from GitHub)
+- **num_problems**: For pglib only; total problems to generate
 - **difficulties**: List of levels (easy, medium, hard, very_hard)
-- **problems_per_difficulty**: Problems to generate per level
+- **problems_per_difficulty**: Problems to generate per level (synthetic only)
 - **attempts**: LLM attempts per problem
 - **models**: List of OpenRouter models to evaluate (runs benchmark for each)
 - **tolerance**, **use_async**, **output_dir**, **seed**, **scores_file**

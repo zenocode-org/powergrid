@@ -1,0 +1,15 @@
+runs:
+- model: openai/gpt-5.4-pro
+  run_name: openai_gpt-5.4-pro
+  timestamp: 2026-03-15_20-38-30
+  attempts_per_problem: 1
+  by_difficulty:
+    hard:
+      passed: 9
+      total: 10
+      success_rate: 0.9
+      avg_cost_gap_pct: -0.0
+  overall:
+    passed: 9
+    total: 10
+    success_rate: 0.9

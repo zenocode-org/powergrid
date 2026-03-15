@@ -1,0 +1,19 @@
+# PGLib benchmark for GPT-5.4-pro (100% on synthetic)
+# Run: uv run python -m dispatch.benchmark --config benchmark_config.pglib_gpt54.yaml
+
+source: pglib
+num_problems: 10
+
+# Attempts per problem
+attempts: 1
+
+# GPT-5.4-pro only (100% on synthetic calibration)
+models:
+  - openai/gpt-5.4-pro
+
+tolerance: 0.05
+use_async: true
+
+output_dir: pglib_benchmark_runs
+scores_file: pglib_benchmark_runs/scores.yaml
+seed: 1

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-03-15_20-38-30",
+  "run_name": "openai_gpt-5.4-pro",
+  "model": "openai/gpt-5.4-pro",
+  "attempts_per_problem": 1,
+  "by_difficulty": {
+    "hard": {
+      "passed": 9,
+      "total": 10,
+      "success_rate": 0.9,
+      "avg_cost_gap": -6.04334021949284e-06
+    }
+  }
+}

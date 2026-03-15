@@ -407,6 +407,38 @@ def generate_problem(
     )
 
 
+def generate_pglib_problems(num_problems: int, seed: int = 42) -> list[DispatchProblem]:
+    """Generate problems from PGLib cases for benchmarking."""
+    random.seed(seed)
+    np.random.seed(seed)
+    all_cases = [
+        (f"{PGLIB_BASE}{p}", p.replace("/", "_").replace(".json", ""))
+        for p in RTS_CASES + FERC_CASES
+    ]
+    case_data: list[tuple[dict, str]] = []
+    for url, source_name in all_cases:
+        try:
+            data = fetch_pglib_case(url)
+            case_data.append((data, source_name))
+        except Exception as e:
+            print(f"Warning: could not fetch {url}: {e}")
+    problems: list[DispatchProblem] = []
+    seen_ids: set[str] = set()
+    attempts = 0
+    max_attempts = 200
+    while len(problems) < num_problems and attempts < max_attempts:
+        attempts += 1
+        if not case_data:
+            break
+        data, source_name = random.choice(case_data)
+        t = random.randint(0, 47)
+        p = make_pglib_problem(data, source_name, t, attempts)
+        if p and p.problem_id not in seen_ids:
+            problems.append(p)
+            seen_ids.add(p.problem_id)
+    return problems
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate dispatch problems")
     parser.add_argument(

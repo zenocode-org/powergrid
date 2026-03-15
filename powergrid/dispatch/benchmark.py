@@ -12,7 +12,7 @@ import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
-from .generate import make_synthetic_problem
+from .generate import make_synthetic_problem, generate_pglib_problems
 from .types import DispatchProblem, VerificationResult
 from .evaluate import run_evaluation, setup_logging
 
@@ -41,14 +41,20 @@ def generate_problems_for_benchmark(
     problems_per_difficulty: int,
     difficulties: list[str] | None = None,
     seed: int = 42,
+    source: str = "synthetic",
+    num_problems: int | None = None,
 ) -> list[DispatchProblem]:
-    """Generate problems for each difficulty level."""
+    """Generate problems for benchmarking. source: 'synthetic' or 'pglib'."""
     import random
     import numpy as np
 
+    if source == "pglib":
+        n = num_problems or 10
+        logger.info("Generating %d PGLib problems...", n)
+        return generate_pglib_problems(n, seed=seed)
+
     random.seed(seed)
     np.random.seed(seed)
-
     difficulties = difficulties or DEFAULT_DIFFICULTIES
     problems: list[DispatchProblem] = []
     seen_ids: set[str] = set()
@@ -199,10 +205,23 @@ def main() -> int:
         help="Run identifier (default: derived from model)",
     )
     parser.add_argument(
+        "--source",
+        type=str,
+        default=None,
+        choices=["synthetic", "pglib"],
+        help="Problem source: synthetic or pglib (overrides config)",
+    )
+    parser.add_argument(
+        "--num-problems",
+        type=int,
+        default=None,
+        help="For pglib: total problems to generate (overrides config)",
+    )
+    parser.add_argument(
         "--problems-per-difficulty",
         type=int,
         default=None,
-        help="Problems to generate per difficulty level",
+        help="Problems to generate per difficulty level (synthetic only)",
     )
     parser.add_argument(
         "--output-dir",
@@ -248,6 +267,8 @@ def main() -> int:
             return cli_val
         return cfg.get(key, default)
 
+    source = _get("source", "synthetic", args.source)
+    num_problems = _get("num_problems", None, args.num_problems)
     difficulties = _get("difficulties", DEFAULT_DIFFICULTIES)
     problems_per_difficulty = _get("problems_per_difficulty", 2, args.problems_per_difficulty)
     attempts = _get("attempts", 5, args.attempts)
@@ -274,13 +295,20 @@ def main() -> int:
     timestamp = _timestamp()
 
     # Generate problems
-    logger.info(
-        "Generating %d problems per difficulty (%s)...",
-        problems_per_difficulty,
-        ", ".join(difficulties),
-    )
+    if source == "pglib":
+        logger.info("Generating PGLib problems (num_problems=%s)...", num_problems or 10)
+    else:
+        logger.info(
+            "Generating %d problems per difficulty (%s)...",
+            problems_per_difficulty,
+            ", ".join(difficulties),
+        )
     problems = generate_problems_for_benchmark(
-        problems_per_difficulty, difficulties=difficulties, seed=seed
+        problems_per_difficulty,
+        difficulties=difficulties,
+        seed=seed,
+        source=source,
+        num_problems=num_problems,
     )
     if not problems:
         logger.error("No problems generated")
@@ -306,14 +334,20 @@ def main() -> int:
         )
         print(f"\n--- Model: {model} ---")
 
+        # For pglib, derive difficulties from generated problems
+        effective_diffs = (
+            sorted(set(p.difficulty for p in problems))
+            if source == "pglib"
+            else difficulties
+        )
         results_data = _run_single_model(
             problems, model, attempts, tolerance, use_async,
-            out_dir, timestamp, run_name, difficulties,
+            out_dir, timestamp, run_name, effective_diffs,
         )
         all_scores.append(results_data)
 
         # Print summary
-        for diff in difficulties:
+        for diff in effective_diffs:
             d = results_data["by_difficulty"].get(diff)
             if not d:
                 continue
