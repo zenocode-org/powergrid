@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-03-15_19-50-16",
+  "run_name": "openai_gpt-5.4-pro",
+  "model": "openai/gpt-5.4-pro",
+  "attempts_per_problem": 1,
+  "by_difficulty": {
+    "easy": {
+      "passed": 15,
+      "total": 15,
+      "success_rate": 1.0,
+      "avg_cost_gap": 2.306473683151729e-17
+    },
+    "medium": {
+      "passed": 15,
+      "total": 15,
+      "success_rate": 1.0,
+      "avg_cost_gap": -7.196107474570343e-18
+    },
+    "hard": {
+      "passed": 15,
+      "total": 15,
+      "success_rate": 1.0,
+      "avg_cost_gap": -3.8457598663231606e-17
+    },
+    "very_hard": {
+      "passed": 15,
+      "total": 15,
+      "success_rate": 1.0,
+      "avg_cost_gap": -7.95244118204253e-18
+    }
+  }
+}

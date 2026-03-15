@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-03-15_19-50-16",
+  "run_name": "anthropic_claude-opus-4.6",
+  "model": "anthropic/claude-opus-4.6",
+  "attempts_per_problem": 1,
+  "by_difficulty": {
+    "easy": {
+      "passed": 11,
+      "total": 15,
+      "success_rate": 0.7333333333333333,
+      "avg_cost_gap": -0.02964864061399494
+    },
+    "medium": {
+      "passed": 6,
+      "total": 15,
+      "success_rate": 0.4,
+      "avg_cost_gap": -0.015584270769869624
+    },
+    "hard": {
+      "passed": 1,
+      "total": 15,
+      "success_rate": 0.06666666666666667,
+      "avg_cost_gap": -0.054181046349380035
+    },
+    "very_hard": {
+      "passed": 11,
+      "total": 15,
+      "success_rate": 0.7333333333333333,
+      "avg_cost_gap": -0.006520559459926344
+    }
+  }
+}

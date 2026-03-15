@@ -1,0 +1,146 @@
+runs:
+- model: openai/gpt-5.4-pro
+  run_name: openai_gpt-5.4-pro
+  timestamp: 2026-03-15_19-50-16
+  attempts_per_problem: 1
+  by_difficulty:
+    easy:
+      passed: 15
+      total: 15
+      success_rate: 1.0
+      avg_cost_gap_pct: 0.0
+    medium:
+      passed: 15
+      total: 15
+      success_rate: 1.0
+      avg_cost_gap_pct: -0.0
+    hard:
+      passed: 15
+      total: 15
+      success_rate: 1.0
+      avg_cost_gap_pct: -0.0
+    very_hard:
+      passed: 15
+      total: 15
+      success_rate: 1.0
+      avg_cost_gap_pct: -0.0
+  overall:
+    passed: 60
+    total: 60
+    success_rate: 1.0
+- model: openai/gpt-5-nano
+  run_name: openai_gpt-5-nano
+  timestamp: 2026-03-15_19-50-16
+  attempts_per_problem: 1
+  by_difficulty:
+    easy:
+      passed: 15
+      total: 15
+      success_rate: 1.0
+      avg_cost_gap_pct: 0.0
+    medium:
+      passed: 12
+      total: 15
+      success_rate: 0.8
+      avg_cost_gap_pct: -0.25
+    hard:
+      passed: 15
+      total: 15
+      success_rate: 1.0
+      avg_cost_gap_pct: -0.0
+    very_hard:
+      passed: 11
+      total: 15
+      success_rate: 0.7333
+      avg_cost_gap_pct: 4.34
+  overall:
+    passed: 53
+    total: 60
+    success_rate: 0.8833333333333333
+- model: anthropic/claude-sonnet-4.5
+  run_name: anthropic_claude-sonnet-4.5
+  timestamp: 2026-03-15_19-50-16
+  attempts_per_problem: 1
+  by_difficulty:
+    easy:
+      passed: 13
+      total: 15
+      success_rate: 0.8667
+      avg_cost_gap_pct: -1.41
+    medium:
+      passed: 4
+      total: 15
+      success_rate: 0.2667
+      avg_cost_gap_pct: -1.27
+    hard:
+      passed: 0
+      total: 15
+      success_rate: 0.0
+      avg_cost_gap_pct: -6.73
+    very_hard:
+      passed: 0
+      total: 15
+      success_rate: 0.0
+      avg_cost_gap_pct: 2.83
+  overall:
+    passed: 17
+    total: 60
+    success_rate: 0.2833333333333333
+- model: anthropic/claude-sonnet-4.6
+  run_name: anthropic_claude-sonnet-4.6
+  timestamp: 2026-03-15_19-50-16
+  attempts_per_problem: 1
+  by_difficulty:
+    easy:
+      passed: 15
+      total: 15
+      success_rate: 1.0
+      avg_cost_gap_pct: 0.06
+    medium:
+      passed: 3
+      total: 15
+      success_rate: 0.2
+      avg_cost_gap_pct: 0.34
+    hard:
+      passed: 1
+      total: 15
+      success_rate: 0.0667
+      avg_cost_gap_pct: -5.38
+    very_hard:
+      passed: 6
+      total: 15
+      success_rate: 0.4
+      avg_cost_gap_pct: -2.69
+  overall:
+    passed: 25
+    total: 60
+    success_rate: 0.4166666666666667
+- model: anthropic/claude-opus-4.6
+  run_name: anthropic_claude-opus-4.6
+  timestamp: 2026-03-15_19-50-16
+  attempts_per_problem: 1
+  by_difficulty:
+    easy:
+      passed: 11
+      total: 15
+      success_rate: 0.7333
+      avg_cost_gap_pct: -2.96
+    medium:
+      passed: 6
+      total: 15
+      success_rate: 0.4
+      avg_cost_gap_pct: -1.56
+    hard:
+      passed: 1
+      total: 15
+      success_rate: 0.0667
+      avg_cost_gap_pct: -5.42
+    very_hard:
+      passed: 11
+      total: 15
+      success_rate: 0.7333
+      avg_cost_gap_pct: -0.65
+  overall:
+    passed: 29
+    total: 60
+    success_rate: 0.48333333333333334
